@@ -502,11 +502,11 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
     auto y = GENERATE(
         take(1, chunk(3, filter([](int i) { return i % 2 == 1; }, random(1, 1000))))); // NOLINT
 
-    auto interpolationTable = "Table"_("Column"_("x"_, "List"_(thing[0], thing[1], thing[2])),
-                                       "Column"_("y"_, "List"_(y[0], "Interpolate"_("x"_), y[2])));
+    auto interpolationTable = "Table"_("x"_(thing[0], thing[1], thing[2]),
+                                       "y"_(y[0], "Interpolate"_("x"_), y[2]));
 
-    auto expectedProjectX = "Table"_("Column"_("x"_, "List"_(thing[0], thing[1], thing[2])));
-    auto expectedProjectY = "Table"_("Column"_("y"_, "List"_(y[0], (y[0] + y[2]) / 2, y[2])));
+    auto expectedProjectX = "Table"_("x"_(thing[0], thing[1], thing[2]));
+    auto expectedProjectY = "Table"_("y"_(y[0], (y[0] + y[2]) / 2, y[2]));
 
     CHECK(eval("Project"_(interpolationTable.clone(CloneReason::FOR_TESTING), "As"_("x"_, "x"_))) ==
           expectedProjectX);
@@ -516,34 +516,34 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
 
   SECTION("Relational (Ints)") {
     SECTION("Selection") {
-      auto intTable = "Table"_("Column"_("Value"_, "List"_(2, 3, 1, 4, 1))); // NOLINT
+      auto intTable = "Table"_("Value"_("List"_(2, 3, 1, 4, 1))); // NOLINT
       auto result = eval("Select"_(std::move(intTable), "Where"_("Greater"_("Value"_, 3))));
-      CHECK(result == "Table"_("Column"_("Value"_, "List"_(4))));
+      CHECK(result == "Table"_("Value"_( "List"_(4))));
     }
 
     SECTION("Projection") {
-      auto intTable = "Table"_("Column"_("Value"_, "List"_(10, 20, 30, 40, 50))); // NOLINT
+      auto intTable = "Table"_("Value"_( "List"_(10, 20, 30, 40, 50))); // NOLINT
 
       SECTION("Plus") {
         CHECK(eval("Project"_(intTable.clone(CloneReason::FOR_TESTING),
                               "As"_("Result"_, "Plus"_("Value"_, "Value"_)))) ==
-              "Table"_("Column"_("Result"_, "List"_(20, 40, 60, 80, 100)))); // NOLINT
+              "Table"_("Result"_( "List"_(20, 40, 60, 80, 100)))); // NOLINT
       }
 
       SECTION("Greater") {
         CHECK(eval("Project"_(intTable.clone(CloneReason::FOR_TESTING),
                               "As"_("Result"_, "Greater"_("Value"_, 25)))) ==
-              "Table"_("Column"_("Result"_, "List"_(false, false, true, true, true)))); // NOLINT
+              "Table"_("Result"_( "List"_(false, false, true, true, true)))); // NOLINT
         CHECK(eval("Project"_(intTable.clone(CloneReason::FOR_TESTING),
                               "As"_("Result"_, "Greater"_(45, "Value"_)))) ==
-              "Table"_("Column"_("Result"_, "List"_(true, true, true, true, false)))); // NOLINT
+              "Table"_("Result"_( "List"_(true, true, true, true, false)))); // NOLINT
       }
 
       SECTION("Logic") {
         CHECK(eval("Project"_(
                   intTable.clone(CloneReason::FOR_TESTING),
                   "As"_("Result"_, "And"_("Greater"_("Value"_, 25), "Greater"_(45, "Value"_))))) ==
-              "Table"_("Column"_("Result"_, "List"_(false, false, true, true, false)))); // NOLINT
+              "Table"_("Result"_( "List"_(false, false, true, true, false)))); // NOLINT
       }
     }
 
@@ -554,10 +554,10 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
       std::iota(vec1.begin(), vec1.end(), 0);
       std::iota(vec2.begin(), vec2.end(), dataSetSize);
 
-      auto adjacency1 = "Table"_("Column"_("From"_, "List"_(boss::Span<int64_t>(vector(vec1)))),
-                                 "Column"_("To"_, "List"_(boss::Span<int64_t>(vector(vec2)))));
-      auto adjacency2 = "Table"_("Column"_("From2"_, "List"_(boss::Span<int64_t>(vector(vec2)))),
-                                 "Column"_("To2"_, "List"_(boss::Span<int64_t>(vector(vec1)))));
+      auto adjacency1 = "Table"_("From"_( "List"_(boss::Span<int64_t>(vector(vec1)))),
+                                 "To"_( "List"_(boss::Span<int64_t>(vector(vec2)))));
+      auto adjacency2 = "Table"_("From2"_( "List"_(boss::Span<int64_t>(vector(vec2)))),
+                                 "To2"_( "List"_(boss::Span<int64_t>(vector(vec1)))));
 
       auto result = eval("Join"_(std::move(adjacency1), std::move(adjacency2),
                                  "Where"_("Equal"_("To"_, "From2"_))));
@@ -568,14 +568,14 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
   }
 
   SECTION("Relational (Strings)") {
-    auto customerTable = "Table"_("Column"_("FirstName"_, "List"_("John", "Sam", "Barbara")),
-                                  "Column"_("LastName"_, "List"_("McCarthy", "Madden", "Liskov")));
+    auto customerTable = "Table"_("FirstName"_( "List"_("John", "Sam", "Barbara")),
+                                  "LastName"_( "List"_("McCarthy", "Madden", "Liskov")));
 
     SECTION("Selection") {
       auto sam = eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING),
                                 "Where"_("StringContainsQ"_("LastName"_, "Madden"))));
-      CHECK(sam == "Table"_("Column"_("FirstName"_, "List"_("Sam")),
-                            "Column"_("LastName"_, "List"_("Madden"))));
+      CHECK(sam == "Table"_("FirstName"_( "List"_("Sam")),
+                            "LastName"_( "List"_("Madden"))));
     }
 
     SECTION("Aggregation") {
@@ -629,20 +629,20 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
 
   SECTION("Relational (empty table)") {
     auto emptyCustomerTable =
-        "Table"_("Column"_("ID"_, "List"_()), "Column"_("FirstName"_, "List"_()),
-                 "Column"_("LastName"_, "List"_()), "Column"_("BirthYear"_, "List"_()),
-                 "Column"_("Country"_, "List"_()));
+      "Table"_("ID"_( "List"_()), "FirstName"_( "List"_()),
+               "LastName"_( "List"_()), "BirthYear"_( "List"_()),
+               "Country"_( "List"_()));
     auto emptySelect =
         eval("Select"_(emptyCustomerTable.clone(CloneReason::FOR_TESTING), "Function"_(true)));
     CHECK(emptySelect == emptyCustomerTable);
   }
 
   SECTION("Relational (multiple types)") {
-    auto customerTable = "Table"_("Column"_("ID"_, "List"_(1, 2, 3)), // NOLINT
-                                  "Column"_("FirstName"_, "List"_("John", "Sam", "Barbara")),
-                                  "Column"_("LastName"_, "List"_("McCarthy", "Madden", "Liskov")),
-                                  "Column"_("BirthYear"_, "List"_(1927, 1976, 1939)), // NOLINT
-                                  "Column"_("Country"_, "List"_("USA", "USA", "USA")));
+    auto customerTable = "Table"_("ID"_( "List"_(1, 2, 3)), // NOLINT
+                                  "FirstName"_( "List"_("John", "Sam", "Barbara")),
+                                  "LastName"_( "List"_("McCarthy", "Madden", "Liskov")),
+                                  "BirthYear"_( "List"_(1927, 1976, 1939)), // NOLINT
+                                  "Country"_( "List"_("USA", "USA", "USA")));
 
     SECTION("Selection") {
       auto fullTable =
@@ -651,9 +651,9 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
 
       auto none =
           eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING), "Function"_(false)));
-      CHECK(none == "Table"_("Column"_("ID"_, "List"_()), "Column"_("FirstName"_, "List"_()),
-                             "Column"_("LastName"_, "List"_()), "Column"_("BirthYear"_, "List"_()),
-                             "Column"_("Country"_, "List"_())));
+      CHECK(none == "Table"_("ID"_( "List"_()), "FirstName"_( "List"_()),
+                             "LastName"_( "List"_()), "BirthYear"_( "List"_()),
+                             "Country"_( "List"_())));
 
       auto usa = eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING),
                                 "Where"_("StringContainsQ"_("Country"_, "USA"))));
@@ -661,48 +661,48 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
 
       auto madden = eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING),
                                    "Where"_("StringContainsQ"_("LastName"_, "Madden"))));
-      CHECK(madden == "Table"_("Column"_("ID"_, "List"_(2)), // NOLINT
-                               "Column"_("FirstName"_, "List"_("Sam")),
-                               "Column"_("LastName"_, "List"_("Madden")),
-                               "Column"_("BirthYear"_, "List"_(1976)), // NOLINT
-                               "Column"_("Country"_, "List"_("USA"))));
+      CHECK(madden == "Table"_("ID"_( "List"_(2)), // NOLINT
+                               "FirstName"_( "List"_("Sam")),
+                               "LastName"_( "List"_("Madden")),
+                               "BirthYear"_( "List"_(1976)), // NOLINT
+                               "Country"_( "List"_("USA"))));
 
       auto john = eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING),
                                  "Where"_("StringContainsQ"_("FirstName"_, "John"))));
-      CHECK(john == "Table"_("Column"_("ID"_, "List"_(1)), // NOLINT
-                             "Column"_("FirstName"_, "List"_("John")),
-                             "Column"_("LastName"_, "List"_("McCarthy")),
-                             "Column"_("BirthYear"_, "List"_(1927)), // NOLINT
-                             "Column"_("Country"_, "List"_("USA"))));
+      CHECK(john == "Table"_("ID"_( "List"_(1)), // NOLINT
+                             "FirstName"_( "List"_("John")),
+                             "LastName"_( "List"_("McCarthy")),
+                             "BirthYear"_( "List"_(1927)), // NOLINT
+                             "Country"_( "List"_("USA"))));
 
       auto id3 = eval(
           "Select"_(customerTable.clone(CloneReason::FOR_TESTING), "Where"_("Equal"_("ID"_, 3))));
-      CHECK(id3 == "Table"_("Column"_("ID"_, "List"_(3)), // NOLINT
-                            "Column"_("FirstName"_, "List"_("Barbara")),
-                            "Column"_("LastName"_, "List"_("Liskov")),
-                            "Column"_("BirthYear"_, "List"_(1939)), // NOLINT
-                            "Column"_("Country"_, "List"_("USA"))));
+      CHECK(id3 == "Table"_("ID"_( "List"_(3)), // NOLINT
+                            "FirstName"_( "List"_("Barbara")),
+                            "LastName"_( "List"_("Liskov")),
+                            "BirthYear"_( "List"_(1939)), // NOLINT
+                            "Country"_( "List"_("USA"))));
 
       auto notFound = eval("Select"_(customerTable.clone(CloneReason::FOR_TESTING),
                                      "Where"_("Equal"_("BirthYear"_, 0))));
-      CHECK(notFound == "Table"_("Column"_("ID"_, "List"_()), "Column"_("FirstName"_, "List"_()),
-                                 "Column"_("LastName"_, "List"_()),
-                                 "Column"_("BirthYear"_, "List"_()),
-                                 "Column"_("Country"_, "List"_())));
+      CHECK(notFound == "Table"_("ID"_( "List"_()), "FirstName"_( "List"_()),
+                                 "LastName"_( "List"_()),
+                                 "BirthYear"_( "List"_()),
+                                 "Country"_( "List"_())));
     }
 
     SECTION("Projection") {
       auto fullnames =
           eval("Project"_(customerTable.clone(CloneReason::FOR_TESTING),
                           "As"_("FirstName"_, "FirstName"_, "LastName"_, "LastName"_)));
-      CHECK(fullnames == "Table"_("Column"_("FirstName"_, "List"_("John", "Sam", "Barbara")),
-                                  "Column"_("LastName"_, "List"_("McCarthy", "Madden", "Liskov"))));
+      CHECK(fullnames == "Table"_("FirstName"_( "List"_("John", "Sam", "Barbara")),
+                                  "LastName"_( "List"_("McCarthy", "Madden", "Liskov"))));
       auto firstNames = eval("Project"_(customerTable.clone(CloneReason::FOR_TESTING),
                                         "As"_("FirstName"_, "FirstName"_)));
-      CHECK(firstNames == "Table"_("Column"_("FirstName"_, "List"_("John", "Sam", "Barbara"))));
+      CHECK(firstNames == "Table"_("FirstName"_( "List"_("John", "Sam", "Barbara"))));
       auto lastNames = eval("Project"_(customerTable.clone(CloneReason::FOR_TESTING),
                                        "As"_("LastName"_, "LastName"_)));
-      CHECK(lastNames == "Table"_("Column"_("LastName"_, "List"_("McCarthy", "Madden", "Liskov"))));
+      CHECK(lastNames == "Table"_("LastName"_( "List"_("McCarthy", "Madden", "Liskov"))));
     }
 
     SECTION("Sorting") {
@@ -715,11 +715,11 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
           eval("Sort"_("Select"_(customerTable.clone(CloneReason::FOR_TESTING), "Function"_(true)),
                        "By"_("LastName"_)));
       CHECK(sortedByLastName ==
-            "Table"_("Column"_("ID"_, "List"_(3, 2, 1)), // NOLINT
-                     "Column"_("FirstName"_, "List"_("Barbara", "Sam", "John")),
-                     "Column"_("LastName"_, "List"_("Liskov", "Madden", "McCarthy")),
-                     "Column"_("BirthYear"_, "List"_(1939, 1976, 1927)), // NOLINT
-                     "Column"_("Country"_, "List"_("USA", "USA", "USA"))));
+            "Table"_("ID"_( "List"_(3, 2, 1)), // NOLINT
+                     "FirstName"_( "List"_("Barbara", "Sam", "John")),
+                     "LastName"_( "List"_("Liskov", "Madden", "McCarthy")),
+                     "BirthYear"_( "List"_(1939, 1976, 1927)), // NOLINT
+                     "Country"_( "List"_("USA", "USA", "USA"))));
     }
 
     SECTION("Aggregation") {
@@ -752,55 +752,55 @@ TEST_CASE("TPC-H", "[tpch]") {
                                                 std::move(expression)));
   };
 
-  auto nation = "Table"_("Column"_("N_NATIONKEY"_, "List"_(1, 2, 3, 4)), // NOLINT
-                         "Column"_("N_REGIONKEY"_, "List"_(1, 1, 2, 3)), // NOLINT
-                         "Column"_("N_NAME"_, "List"_("ALGERIA", "ARGENTINA", "BRAZIL", "CANADA")));
+  auto nation = "Table"_("N_NATIONKEY"_( "List"_(1, 2, 3, 4)), // NOLINT
+                         "N_REGIONKEY"_( "List"_(1, 1, 2, 3)), // NOLINT
+                         "N_NAME"_( "List"_("ALGERIA", "ARGENTINA", "BRAZIL", "CANADA")));
 
   auto part =
-      "Table"_("Column"_("P_PARTKEY"_, "List"_(1, 1, 2, 3)),                         // NOLINT
-               "Column"_("P_RETAILPRICE"_, "List"_(100.01, 100.01, 100.01, 100.01)), // NOLINT
-               "Column"_("P_NAME"_, "List"_("spring green yellow purple cornsilk",
+    "Table"_("P_PARTKEY"_( "List"_(1, 1, 2, 3)),                         // NOLINT
+             "P_RETAILPRICE"_( "List"_(100.01, 100.01, 100.01, 100.01)), // NOLINT
+             "P_NAME"_( "List"_("spring green yellow purple cornsilk",
                                             "cornflower chocolate smoke green pink",
                                             "moccasin green thistle khaki floral",
                                             "green blush tomato burlywood seashell")));
 
-  auto supplier = "Table"_("Column"_("S_SUPPKEY"_, "List"_(1, 1, 2, 3)),    // NOLINT
-                           "Column"_("S_NATIONKEY"_, "List"_(1, 1, 2, 3))); // NOLINT
+  auto supplier = "Table"_("S_SUPPKEY"_( "List"_(1, 1, 2, 3)),    // NOLINT
+                           "S_NATIONKEY"_( "List"_(1, 1, 2, 3))); // NOLINT
 
   auto partsupp =
-      "Table"_("Column"_("PS_PARTKEY"_, "List"_(1, 1, 2, 3)),                         // NOLINT
-               "Column"_("PS_SUPPKEY"_, "List"_(1, 1, 2, 3)),                         // NOLINT
-               "Column"_("PS_SUPPLYCOST"_, "List"_(771.64, 993.49, 337.09, 357.84))); // NOLINT
+    "Table"_("PS_PARTKEY"_( "List"_(1, 1, 2, 3)),                         // NOLINT
+             "PS_SUPPKEY"_( "List"_(1, 1, 2, 3)),                         // NOLINT
+             "PS_SUPPLYCOST"_( "List"_(771.64, 993.49, 337.09, 357.84))); // NOLINT
 
   auto customer = "Table"_(
-      "Column"_("C_CUSTKEY"_, "List"_(4, 7, 1, 4)),                       // NOLINT
-      "Column"_("C_NATIONKEY"_, "List"_(15, 13, 1, 4)),                   // NOLINT
-      "Column"_("C_ACCTBAL"_, "List"_(711.56, 121.65, 7498.12, 2866.83)), // NOLINT
-      "Column"_("C_NAME"_, "List"_("Customer#000000001", "Customer#000000002", "Customer#000000003",
+                           "C_CUSTKEY"_( "List"_(4, 7, 1, 4)),                       // NOLINT
+                           "C_NATIONKEY"_( "List"_(15, 13, 1, 4)),                   // NOLINT
+                           "C_ACCTBAL"_( "List"_(711.56, 121.65, 7498.12, 2866.83)), // NOLINT
+                           "C_NAME"_( "List"_("Customer#000000001", "Customer#000000002", "Customer#000000003",
                                    "Customer#000000004")),
-      "Column"_("C_MKTSEGMENT"_, "List"_("AUTOMOBILE", "MACHINERY", "HOUSEHOLD", "BUILDING")));
+                           "C_MKTSEGMENT"_( "List"_("AUTOMOBILE", "MACHINERY", "HOUSEHOLD", "BUILDING")));
 
   auto orders = "Table"_(
-      "Column"_("O_ORDERKEY"_, "List"_(1, 1, 2, 3)),
-      "Column"_("O_CUSTKEY"_, "List"_(4, 7, 1, 4)),                                    // NOLINT
-      "Column"_("O_TOTALPRICE"_, "List"_(178821.73, 154260.84, 202660.52, 155680.60)), // NOLINT
-      "Column"_("O_ORDERDATE"_, "List"_("DateObject"_("1998-01-24"), "DateObject"_("1992-05-01"),
+                         "O_ORDERKEY"_( "List"_(1, 1, 2, 3)),
+                         "O_CUSTKEY"_( "List"_(4, 7, 1, 4)),                                    // NOLINT
+                         "O_TOTALPRICE"_( "List"_(178821.73, 154260.84, 202660.52, 155680.60)), // NOLINT
+                         "O_ORDERDATE"_( "List"_("DateObject"_("1998-01-24"), "DateObject"_("1992-05-01"),
                                         "DateObject"_("1992-12-21"), "DateObject"_("1994-06-18"))),
-      "Column"_("O_SHIPPRIORITY"_, "List"_(1, 1, 1, 1))); // NOLINT
+                         "O_SHIPPRIORITY"_( "List"_(1, 1, 1, 1))); // NOLINT
 
   auto lineitem = "Table"_(
-      "Column"_("L_ORDERKEY"_, "List"_(1, 1, 2, 3)),                                 // NOLINT
-      "Column"_("L_PARTKEY"_, "List"_(1, 2, 3, 4)),                                  // NOLINT
-      "Column"_("L_SUPPKEY"_, "List"_(1, 2, 3, 4)),                                  // NOLINT
-      "Column"_("L_RETURNFLAG"_, "List"_("N", "N", "A", "A")),                       // NOLINT
-      "Column"_("L_LINESTATUS"_, "List"_("O", "O", "F", "F")),                       // NOLINT
-      "Column"_("L_RETURNFLAG_INT"_, "List"_('N'_i64, 'N'_i64, 'A'_i64, 'A'_i64)),   // NOLINT
-      "Column"_("L_LINESTATUS_INT"_, "List"_('O'_i64, 'O'_i64, 'F'_i64, 'F'_i64)),   // NOLINT
-      "Column"_("L_QUANTITY"_, "List"_(17, 21, 8, 5)),                               // NOLINT
-      "Column"_("L_EXTENDEDPRICE"_, "List"_(17954.55, 34850.16, 7712.48, 25284.00)), // NOLINT
-      "Column"_("L_DISCOUNT"_, "List"_(0.10, 0.05, 0.06, 0.06)),                     // NOLINT
-      "Column"_("L_TAX"_, "List"_(0.02, 0.06, 0.02, 0.06)),                          // NOLINT
-      "Column"_("L_SHIPDATE"_, "List"_("DateObject"_("1992-03-13"), "DateObject"_("1994-04-12"),
+                           "L_ORDERKEY"_( "List"_(1, 1, 2, 3)),                                 // NOLINT
+                           "L_PARTKEY"_( "List"_(1, 2, 3, 4)),                                  // NOLINT
+                           "L_SUPPKEY"_( "List"_(1, 2, 3, 4)),                                  // NOLINT
+                           "L_RETURNFLAG"_( "List"_("N", "N", "A", "A")),                       // NOLINT
+                           "L_LINESTATUS"_( "List"_("O", "O", "F", "F")),                       // NOLINT
+                           "L_RETURNFLAG_INT"_( "List"_('N'_i64, 'N'_i64, 'A'_i64, 'A'_i64)),   // NOLINT
+                           "L_LINESTATUS_INT"_( "List"_('O'_i64, 'O'_i64, 'F'_i64, 'F'_i64)),   // NOLINT
+                           "L_QUANTITY"_( "List"_(17, 21, 8, 5)),                               // NOLINT
+                           "L_EXTENDEDPRICE"_( "List"_(17954.55, 34850.16, 7712.48, 25284.00)), // NOLINT
+                           "L_DISCOUNT"_( "List"_(0.10, 0.05, 0.06, 0.06)),                     // NOLINT
+                           "L_TAX"_( "List"_(0.02, 0.06, 0.02, 0.06)),                          // NOLINT
+                           "L_SHIPDATE"_( "List"_("DateObject"_("1992-03-13"), "DateObject"_("1994-04-12"),
                                        "DateObject"_("1996-02-28"), "DateObject"_("1994-12-31"))));
 
   SECTION("Q1 (Select only)") {
@@ -808,8 +808,8 @@ TEST_CASE("TPC-H", "[tpch]") {
         "Project"_(lineitem.clone(CloneReason::FOR_TESTING), "As"_("L_SHIPDATE"_, "L_SHIPDATE"_)),
         "Where"_("Greater"_("DateObject"_("1998-08-31"), "L_SHIPDATE"_))));
     CHECK(output ==
-          eval("Table"_("Column"_(
-              "L_SHIPDATE"_, "List"_("DateObject"_("1992-03-13"), "DateObject"_("1994-04-12"),
+          eval("Table"_(
+                        "L_SHIPDATE"_( "List"_("DateObject"_("1992-03-13"), "DateObject"_("1994-04-12"),
                                      "DateObject"_("1996-02-28"), "DateObject"_("1994-12-31"))))));
   }
 
@@ -823,17 +823,17 @@ TEST_CASE("TPC-H", "[tpch]") {
               "Times"_("L_EXTENDEDPRICE"_, "calc1"_), "charge"_,
               "Times"_("L_EXTENDEDPRICE"_, "calc1"_, "calc2"_), "L_DISCOUNT"_, "L_DISCOUNT"_)));
     CHECK(output ==
-          "Table"_("Column"_("L_QUANTITY"_, "List"_(17, 21, 8, 5)), // NOLINT
-                   "Column"_("L_EXTENDEDPRICE"_,
+          "Table"_("L_QUANTITY"_( "List"_(17, 21, 8, 5)), // NOLINT
+                   "L_EXTENDEDPRICE"_(
                              "List"_(17954.55, 34850.16, 7712.48, 25284.00)), // NOLINT
-                   "Column"_("disc_price"_,
+                   "disc_price"_(
                              "List"_(17954.55 * (1.0 - 0.10), 34850.16 * (1.0 - 0.05),    // NOLINT
                                      7712.48 * (1.0 - 0.06), 25284.00 * (1.0 - 0.06))),   // NOLINT
-                   "Column"_("charge"_, "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0),   // NOLINT
+                   "charge"_( "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0),   // NOLINT
                                                 34850.16 * (1.0 - 0.05) * (0.06 + 1.0),   // NOLINT
                                                 7712.48 * (1.0 - 0.06) * (0.02 + 1.0),    // NOLINT
                                                 25284.00 * (1.0 - 0.06) * (0.06 + 1.0))), // NOLINT
-                   "Column"_("L_DISCOUNT"_, "List"_(0.10, 0.05, 0.06, 0.06))));           // NOLINT
+                   "L_DISCOUNT"_( "List"_(0.10, 0.05, 0.06, 0.06))));           // NOLINT
   }
 
   SECTION("Q1 (Select-Project only)") {
@@ -851,17 +851,17 @@ TEST_CASE("TPC-H", "[tpch]") {
               "Times"_("L_EXTENDEDPRICE"_, "calc1"_), "charge"_,
               "Times"_("L_EXTENDEDPRICE"_, "calc1"_, "calc2"_), "L_DISCOUNT"_, "L_DISCOUNT"_)));
     CHECK(output ==
-          "Table"_("Column"_("L_QUANTITY"_, "List"_(17, 21, 8, 5)), // NOLINT
-                   "Column"_("L_EXTENDEDPRICE"_,
+          "Table"_("L_QUANTITY"_( "List"_(17, 21, 8, 5)), // NOLINT
+                   "L_EXTENDEDPRICE"_(
                              "List"_(17954.55, 34850.16, 7712.48, 25284.00)), // NOLINT
-                   "Column"_("disc_price"_,
+                   "disc_price"_(
                              "List"_(17954.55 * (1.0 - 0.10), 34850.16 * (1.0 - 0.05),    // NOLINT
                                      7712.48 * (1.0 - 0.06), 25284.00 * (1.0 - 0.06))),   // NOLINT
-                   "Column"_("charge"_, "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0),   // NOLINT
+                   "charge"_( "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0),   // NOLINT
                                                 34850.16 * (1.0 - 0.05) * (0.06 + 1.0),   // NOLINT
                                                 7712.48 * (1.0 - 0.06) * (0.02 + 1.0),    // NOLINT
                                                 25284.00 * (1.0 - 0.06) * (0.06 + 1.0))), // NOLINT
-                   "Column"_("L_DISCOUNT"_, "List"_(0.10, 0.05, 0.06, 0.06))));           // NOLINT
+                   "L_DISCOUNT"_( "List"_(0.10, 0.05, 0.06, 0.06))));           // NOLINT
   }
 
   SECTION("Q1 (No Order, No Strings)") {
@@ -898,23 +898,23 @@ TEST_CASE("TPC-H", "[tpch]") {
               "Divide"_("SUM_BASE_PRICE"_, "COUNT_ORDER"_), "AVG_DISC"_,
               "Divide"_("SUM_DISC"_, "COUNT_ORDER"_), "COUNT_ORDER"_, "COUNT_ORDER"_)));
     CHECK(output ==
-          "Table"_("Column"_("L_RETURNFLAG_INT"_, "List"_('N'_i64, 'A'_i64)), // NOLINT
-                   "Column"_("L_LINESTATUS_INT"_, "List"_('O'_i64, 'F'_i64)), // NOLINT
-                   "Column"_("SUM_QTY"_, "List"_(17 + 21, 8 + 5)),            // NOLINT
-                   "Column"_("SUM_BASE_PRICE"_,
+          "Table"_("L_RETURNFLAG_INT"_( "List"_('N'_i64, 'A'_i64)), // NOLINT
+                   "L_LINESTATUS_INT"_( "List"_('O'_i64, 'F'_i64)), // NOLINT
+                   "SUM_QTY"_( "List"_(17 + 21, 8 + 5)),            // NOLINT
+                   "SUM_BASE_PRICE"_(
                              "List"_(17954.55 + 34850.16, 7712.48 + 25284.00)), // NOLINT
-                   "Column"_("SUM_DISC_PRICE"_,
+                   "SUM_DISC_PRICE"_(
                              "List"_(17954.55 * (1.0 - 0.10) + 34850.16 * (1.0 - 0.05),  // NOLINT
                                      7712.48 * (1.0 - 0.06) + 25284.00 * (1.0 - 0.06))), // NOLINT
-                   "Column"_("SUM_CHARGES"_,
+                   "SUM_CHARGES"_(
                              "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0) +             // NOLINT
                                          34850.16 * (1.0 - 0.05) * (0.06 + 1.0),          // NOLINT
                                      7712.48 * (1.0 - 0.06) * (0.02 + 1.0) +              // NOLINT
                                          25284.00 * (1.0 - 0.06) * (0.06 + 1.0))),        // NOLINT
-                   "Column"_("AVG_PRICE"_, "List"_((17954.55 + 34850.16) / 2,             // NOLINT
+                   "AVG_PRICE"_( "List"_((17954.55 + 34850.16) / 2,             // NOLINT
                                                    (7712.48 + 25284.00) / 2)),            // NOLINT
-                   "Column"_("AVG_DISC"_, "List"_((0.10 + 0.05) / 2, (0.06 + 0.06) / 2)), // NOLINT
-                   "Column"_("COUNT_ORDER"_, "List"_(2, 2))));                            // NOLINT
+                   "AVG_DISC"_( "List"_((0.10 + 0.05) / 2, (0.06 + 0.06) / 2)), // NOLINT
+                   "COUNT_ORDER"_( "List"_(2, 2))));                            // NOLINT
   }
 
   SECTION("Q1 (No Order)") {
@@ -950,23 +950,23 @@ TEST_CASE("TPC-H", "[tpch]") {
               "Divide"_("SUM_BASE_PRICE"_, "COUNT_ORDER"_), "AVG_DISC"_,
               "Divide"_("SUM_DISC"_, "COUNT_ORDER"_), "COUNT_ORDER"_, "COUNT_ORDER"_)));
     CHECK(output ==
-          "Table"_("Column"_("L_RETURNFLAG"_, "List"_("N", "A")),  // NOLINT
-                   "Column"_("L_LINESTATUS"_, "List"_("O", "F")),  // NOLINT
-                   "Column"_("SUM_QTY"_, "List"_(17 + 21, 8 + 5)), // NOLINT
-                   "Column"_("SUM_BASE_PRICE"_,
+          "Table"_("L_RETURNFLAG"_( "List"_("N", "A")),  // NOLINT
+                   "L_LINESTATUS"_( "List"_("O", "F")),  // NOLINT
+                   "SUM_QTY"_( "List"_(17 + 21, 8 + 5)), // NOLINT
+                   "SUM_BASE_PRICE"_(
                              "List"_(17954.55 + 34850.16, 7712.48 + 25284.00)), // NOLINT
-                   "Column"_("SUM_DISC_PRICE"_,
+                   "SUM_DISC_PRICE"_(
                              "List"_(17954.55 * (1.0 - 0.10) + 34850.16 * (1.0 - 0.05),  // NOLINT
                                      7712.48 * (1.0 - 0.06) + 25284.00 * (1.0 - 0.06))), // NOLINT
-                   "Column"_("SUM_CHARGES"_,
+                   "SUM_CHARGES"_(
                              "List"_(17954.55 * (1.0 - 0.10) * (0.02 + 1.0) +             // NOLINT
                                          34850.16 * (1.0 - 0.05) * (0.06 + 1.0),          // NOLINT
                                      7712.48 * (1.0 - 0.06) * (0.02 + 1.0) +              // NOLINT
                                          25284.00 * (1.0 - 0.06) * (0.06 + 1.0))),        // NOLINT
-                   "Column"_("AVG_PRICE"_, "List"_((17954.55 + 34850.16) / 2,             // NOLINT
+                   "AVG_PRICE"_( "List"_((17954.55 + 34850.16) / 2,             // NOLINT
                                                    (7712.48 + 25284.00) / 2)),            // NOLINT
-                   "Column"_("AVG_DISC"_, "List"_((0.10 + 0.05) / 2, (0.06 + 0.06) / 2)), // NOLINT
-                   "Column"_("COUNT_ORDER"_, "List"_(2, 2))));                            // NOLINT
+                   "AVG_DISC"_( "List"_((0.10 + 0.05) / 2, (0.06 + 0.06) / 2)), // NOLINT
+                   "COUNT_ORDER"_( "List"_(2, 2))));                            // NOLINT
   }
 
   SECTION("Q1") {
@@ -997,23 +997,23 @@ TEST_CASE("TPC-H", "[tpch]") {
                   "avg_disc"_, "Avg"_("L_DISCOUNT"_), "count_order"_, "Count"_("*"_))),
         "By"_("L_RETURNFLAG"_, "L_LINESTATUS"_))));
     CHECK(output ==
-          "Table"_("Column"_("L_RETURNFLAG"_, "List"_("A", "N")),  // NOLINT
-                   "Column"_("L_LINESTATUS"_, "List"_("F", "O")),  // NOLINT
-                   "Column"_("SUM_QTY"_, "List"_(8 + 5, 17 + 21)), // NOLINT
-                   "Column"_("SUM_BASE_PRICE"_,
+          "Table"_("L_RETURNFLAG"_( "List"_("A", "N")),  // NOLINT
+                   "L_LINESTATUS"_( "List"_("F", "O")),  // NOLINT
+                   "SUM_QTY"_( "List"_(8 + 5, 17 + 21)), // NOLINT
+                   "SUM_BASE_PRICE"_(
                              "List"_(7712.48 + 25284.00, 17954.55 + 34850.16)), // NOLINT
-                   "Column"_("SUM_DISC_PRICE"_,
+                   "SUM_DISC_PRICE"_(
                              "List"_(7712.48 * (1.0 - 0.06) + 25284.00 * (1.0 - 0.06),    // NOLINT
                                      17954.55 * (1.0 - 0.10) + 34850.16 * (1.0 - 0.05))), // NOLINT
-                   "Column"_("SUM_CHARGES"_,
+                   "SUM_CHARGES"_(
                              "List"_(7712.48 * (1.0 - 0.06) * (0.02 + 1.0) +              // NOLINT
                                          25284.00 * (1.0 - 0.06) * (0.06 + 1.0),          // NOLINT
                                      17954.55 * (1.0 - 0.10) * (0.02 + 1.0) +             // NOLINT
                                          34850.16 * (1.0 - 0.05) * (0.06 + 1.0))),        // NOLINT
-                   "Column"_("AVG_PRICE"_, "List"_((7712.48 + 25284.00) / 2,              // NOLINT
+                   "AVG_PRICE"_( "List"_((7712.48 + 25284.00) / 2,              // NOLINT
                                                    (17954.55 + 34850.16) / 2)),           // NOLINT
-                   "Column"_("AVG_DISC"_, "List"_((0.06 + 0.06) / 2, (0.10 + 0.05) / 2)), // NOLINT
-                   "Column"_("COUNT_ORDER"_, "List"_(2, 2))));                            // NOLINT
+                   "AVG_DISC"_( "List"_((0.06 + 0.06) / 2, (0.10 + 0.05) / 2)), // NOLINT
+                   "COUNT_ORDER"_( "List"_(2, 2))));                            // NOLINT
   }
 
   SECTION("Q6 (No Grouping)") {
@@ -1029,7 +1029,7 @@ TEST_CASE("TPC-H", "[tpch]") {
                             "Greater"_("L_SHIPDATE"_, "DateObject"_("1993-12-31"))))),
         "As"_("revenue"_, "Times"_("L_EXTENDEDPRICE"_, "L_DISCOUNT"_))));
     CHECK(output ==
-          "Table"_("Column"_("revenue"_, "List"_(34850.16 * 0.05, 25284.00 * 0.06)))); // NOLINT
+          "Table"_("revenue"_( "List"_(34850.16 * 0.05, 25284.00 * 0.06)))); // NOLINT
   }
 
   SECTION("Q6") {
@@ -1047,7 +1047,7 @@ TEST_CASE("TPC-H", "[tpch]") {
             "As"_("revenue"_, "Times"_("L_EXTENDEDPRICE"_, "L_DISCOUNT"_))),
         "Sum"_("revenue"_)));
     CHECK(output ==
-          "Table"_("Column"_("revenue"_, "List"_(34850.16 * 0.05 + 25284.00 * 0.06)))); // NOLINT
+          "Table"_("revenue"_( "List"_(34850.16 * 0.05 + 25284.00 * 0.06)))); // NOLINT
   }
 
   SECTION("Q3 (No Strings)") {
