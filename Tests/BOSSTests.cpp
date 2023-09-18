@@ -505,8 +505,8 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
     auto interpolationTable = "Table"_("x"_(thing[0], thing[1], thing[2]),
                                        "y"_(y[0], "Interpolate"_("x"_), y[2]));
 
-    auto expectedProjectX = "Table"_("x"_(thing[0], thing[1], thing[2]));
-    auto expectedProjectY = "Table"_("y"_(y[0], (y[0] + y[2]) / 2, y[2]));
+    auto expectedProjectX = "Table"_("x"_("List"_(thing[0], thing[1], thing[2])));
+    auto expectedProjectY = "Table"_("y"_("List"_(y[0], (y[0] + y[2]) / 2, y[2])));
 
     CHECK(eval("Project"_(interpolationTable.clone(CloneReason::FOR_TESTING), "As"_("x"_, "x"_))) ==
           expectedProjectX);
