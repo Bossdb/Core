@@ -881,7 +881,7 @@ TEST_CASE("TPC-H", "[tpch]") {
             "As"_("SUM_QTY"_, "Sum"_("L_QUANTITY"_), "SUM_BASE_PRICE"_, "Sum"_("L_EXTENDEDPRICE"_),
                   "SUM_DISC_PRICE"_, "Sum"_("DISC_PRICE"_), "SUM_CHARGES"_,
                   "Sum"_("Times"_("DISC_PRICE"_, "calc"_)), "SUM_DISC"_, "Sum"_("L_DISCOUNT"_),
-                  "COUNT_ORDER"_, "Count"_("L_QUANTITY"_))),
+                  "COUNT_ORDER"_, "Count"_)),
         "As"_("L_RETURNFLAG_INT"_, "L_RETURNFLAG_INT"_, "L_LINESTATUS_INT"_, "L_LINESTATUS_INT"_,
               "SUM_QTY"_, "SUM_QTY"_, "SUM_BASE_PRICE"_, "SUM_BASE_PRICE"_, "SUM_DISC_PRICE"_,
               "SUM_DISC_PRICE"_, "SUM_CHARGES"_, "SUM_CHARGES"_, "AVG_QTY"_,
@@ -931,7 +931,7 @@ TEST_CASE("TPC-H", "[tpch]") {
             "As"_("SUM_QTY"_, "Sum"_("L_QUANTITY"_), "SUM_BASE_PRICE"_, "Sum"_("L_EXTENDEDPRICE"_),
                   "SUM_DISC_PRICE"_, "Sum"_("DISC_PRICE"_), "SUM_CHARGES"_,
                   "Sum"_("Times"_("DISC_PRICE"_, "calc"_)), "SUM_DISC"_, "Sum"_("L_DISCOUNT"_),
-                  "COUNT_ORDER"_, "Count"_("L_QUANTITY"_))),
+                  "COUNT_ORDER"_, "Count"_)),
         "As"_("L_RETURNFLAG"_, "L_RETURNFLAG"_, "L_LINESTATUS"_, "L_LINESTATUS"_, "SUM_QTY"_,
               "SUM_QTY"_, "SUM_BASE_PRICE"_, "SUM_BASE_PRICE"_, "SUM_DISC_PRICE"_,
               "SUM_DISC_PRICE"_, "SUM_CHARGES"_, "SUM_CHARGES"_, "AVG_QTY"_,
@@ -981,7 +981,7 @@ TEST_CASE("TPC-H", "[tpch]") {
             "As"_("sum_qty"_, "Sum"_("L_QUANTITY"_), "sum_base_price"_, "Sum"_("L_EXTENDEDPRICE"_),
                   "sum_disc_price"_, "Sum"_("disc_price"_), "sum_charges"_, "Sum"_("calc"_),
                   "avg_qty"_, "Avg"_("L_QUANTITY"_), "avg_price"_, "Avg"_("L_EXTENDEDPRICE"_),
-                  "avg_disc"_, "Avg"_("L_DISCOUNT"_), "count_order"_, "Count"_("*"_))),
+                  "avg_disc"_, "Avg"_("L_DISCOUNT"_), "count_order"_, "Count"_)),
         "By"_("L_RETURNFLAG"_, "L_LINESTATUS"_))));
     CHECK(output ==
           "Table"_("L_RETURNFLAG"_("List"_("A", "N")),                                  // NOLINT
