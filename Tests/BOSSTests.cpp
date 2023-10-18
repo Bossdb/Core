@@ -728,12 +728,12 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
                 get<boss::ComplexExpression>(
                     get<boss::ComplexExpression>(countRows).getArguments().at(0))
                     .getArguments()
-                    .at(1)) == "List"_(0));
+                    .at(0)) == "List"_(0));
       CHECK(get<boss::ComplexExpression>(
                 get<boss::ComplexExpression>(
                     get<boss::ComplexExpression>(countRows).getArguments().at(1))
                     .getArguments()
-                    .at(1)) == "List"_(3));
+                    .at(0)) == "List"_(3));
     }
   }
 }
