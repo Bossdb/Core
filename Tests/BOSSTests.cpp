@@ -720,7 +720,8 @@ TEST_CASE("Basics", "[basics]") { // NOLINT
     }
 
     SECTION("Aggregation") {
-      auto countRows = eval("Group"_("Customer"_, "Function"_(0), "Count"_));
+      auto countRows =
+          eval("Group"_(customerTable.clone(CloneReason::FOR_TESTING), "Function"_(0), "Count"_));
       INFO(countRows);
       CHECK(get<boss::ComplexExpression>(countRows).getArguments().size() == 2);
       CHECK(get<boss::ComplexExpression>(
