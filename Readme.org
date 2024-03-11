@@ -1,12 +1,27 @@
 * BOSS
+** Dependencies
+You will need cmake and a (reasonably new) C++ compiler (the BOSS core requires C++ 17).
+*** MacOS
+Assuming you already have a working installation of homebrew, just run
+
+#+begin_src bash :exports code :tangle yes :main no :cache no 
+brew install cmake
+#+end_src
+
 ** Creating a new Engine
 Let's assume you want to create an engine called ReferenceEngine
 #+begin_src bash :exports code :tangle yes :main no :cache no 
-    git clone git@github.com:Bossdb/Core.git
-    cmake -P Core/CreateNewEngine.cmake -- ReferenceEngine
-    cmake -S ReferenceEngine -B build
-    cmake --build build
+  git clone git@github.com:Bossdb/Core.git
+  cmake -P Core/CreateNewEngine.cmake -- ReferenceEngine
+  cmake -S ReferenceEngine -B build
+  cmake --build build
 #+end_src
+
+** Testing your engine
+#+begin_src bash :exports code :tangle yes :main no :cache no
+  ./build/deps/bin/Tests --library build/libReferenceEngine.so
+#+end_src
+Obviously, many tests will fail and you need to implement whatever functionality you would like your engine to support.
 
 ** Implementing a new engine
 Here is an example of a fairly simple engine that only interprets a single expression: (Plus v1 v2)
