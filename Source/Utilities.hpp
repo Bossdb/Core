@@ -12,12 +12,6 @@ template <typename... Fs> struct overload : Fs... {
 
 template <typename... Ts> overload(Ts&&...) -> overload<std::remove_reference_t<Ts>...>;
 
-template <typename MaybeMember, typename Variant> struct isVariantMember;
-
-template <typename MaybeMember, typename... ActualMembers>
-struct isVariantMember<MaybeMember, std::variant<ActualMembers...>>
-    : public std::disjunction<std::is_same<MaybeMember, ActualMembers>...> {};
-
 template <typename, template <typename...> typename>
 struct isInstanceOfTemplate : public std::false_type {};
 
@@ -57,6 +51,18 @@ struct variant_amend<std::variant<Args0...>, Args1...> {
   using type = std::variant<Args0..., Args1...>;
 };
 
+template <typename MaybeMember, typename Variant> struct isVariantMemberStruct;
+
+template <typename MaybeMember, typename... ActualMembers>
+struct isVariantMemberStruct<MaybeMember, std::variant<ActualMembers...>>
+    : public std::disjunction<std::is_same<MaybeMember, ActualMembers>...> {};
+
+template <typename MaybeMember, typename SubType>
+using isVariantMember =
+    std::conditional_t<isInstanceOfTemplate<SubType, std::variant>::value,
+                       isVariantMemberStruct<MaybeMember, SubType>,
+                       isVariantMemberStruct<MaybeMember, typename SubType::SuperType>>;
+
 // ------------------------------
 // see https://stackoverflow.com/a/33196728
 // ------------------------------
@@ -73,8 +79,10 @@ struct is_comparable<L, R, void_t<comparability<L, R>>> : std::true_type {};
 template <typename ReturnType, typename VisitorType, typename InputType,
           typename = std::enable_if<std::is_invocable_v<VisitorType, ReturnType>>>
 ReturnType opportunisticVisitAndTransform(VisitorType&& visitor, InputType&& x) {
-  if(std::holds_alternative<ReturnType>(x)) {
-    return std::forward<VisitorType>(visitor)(std::get<ReturnType>(std::forward<InputType>(x)));
+  if constexpr(isVariantMember<ReturnType, InputType>::value) {
+    if(std::holds_alternative<ReturnType>(x)) {
+      return std::forward<VisitorType>(visitor)(std::get<ReturnType>(std::forward<InputType>(x)));
+    }
   }
   return std::forward<InputType>(x);
 };
