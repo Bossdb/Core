@@ -3,6 +3,10 @@ math(EXPR LAST_ARGC "${CMAKE_ARGC} - 1")
 set(PROJECT_NAME "${CMAKE_ARGV${LAST_ARGC}}")
 message("generating new project: ${PROJECT_NAME}")
 
+execute_process(COMMAND git branch --show-current WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} OUTPUT_VARIABLE BOSS_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git config --get remote.pushDefault WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} OUTPUT_VARIABLE BOSS_REMOTE OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git remote get-url ${BOSS_REMOTE} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} OUTPUT_VARIABLE BOSS_REMOTE_URL OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 file(WRITE ${PROJECT_NAME}/CMakeLists.txt
 "cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})\n"
 "project(${PROJECT_NAME})\n"
@@ -38,11 +42,11 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
 ############################### External Projects ###############################
 
 include(ExternalProject)
-
-set(BOSS_SOURCE_BRANCH main CACHE STRING "if boss core is built from source, which thread should be fetched")
-set(BOSS_SOURCE_REPOSITORY git@github.com:Bossdb/Core.git CACHE STRING "url for the boss repository")
 ]=]
-"ExternalProject_Add(BOSS
+
+"set(BOSS_SOURCE_BRANCH ${BOSS_BRANCH} CACHE STRING \"if boss core is built from source, which thread should be fetched\")
+set(BOSS_SOURCE_REPOSITORY ${BOSS_REMOTE_URL} CACHE STRING \"url for the boss repository\")
+ExternalProject_Add(BOSS
   GIT_REPOSITORY \${BOSS_SOURCE_REPOSITORY}
   DOWNLOAD_DIR $ENV{HOME}/.cmake-downloads/\${CMAKE_PROJECT_NAME}
   GIT_TAG \${BOSS_SOURCE_BRANCH}
