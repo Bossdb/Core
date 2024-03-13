@@ -51,10 +51,23 @@ struct variant_amend<std::variant<Args0...>, Args1...> {
   using type = std::variant<Args0..., Args1...>;
 };
 
-template <typename, typename = void> constexpr bool is_variant_like = false;
+namespace {
+// --------------------
+// see https://stackoverflow.com/a/73034562
+// --------------------
+template <template <class...> class Base, typename... Ts> void test(Base<Ts...>&);
+
+template <template <class...> class, class, class = void>
+constexpr bool is_template_base_of = false;
+
+template <template <class...> class Base, class Derived>
+constexpr bool is_template_base_of<Base, Derived,
+                                   std::void_t<decltype(test<Base>(std::declval<Derived&>()))>> =
+    true;
+} // namespace
 
 template <typename Derived>
-constexpr bool is_variant_like<Derived, std::variant_size<Derived>> = true;
+constexpr bool is_variant_like = is_template_base_of<std::variant, Derived>;
 
 template <typename MaybeMember, typename Variant> struct isVariantMember;
 
