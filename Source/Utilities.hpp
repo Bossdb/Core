@@ -88,15 +88,25 @@ using comparability = decltype(std::declval<L>() == std::declval<R>());
 template <typename L, typename R>
 struct is_comparable<L, R, void_t<comparability<L, R>>> : std::true_type {};
 
-template <typename ReturnType, typename VisitorType, typename InputType,
-          typename = std::enable_if<std::is_invocable_v<VisitorType, ReturnType>>>
-ReturnType opportunisticVisitAndTransform(VisitorType&& visitor, InputType&& x) {
-  if constexpr(is_variant_like<InputType>) {
-    if(std::holds_alternative<ReturnType>(x)) {
-      return std::forward<VisitorType>(visitor)(std::get<ReturnType>(std::forward<InputType>(x)));
+namespace {
+template <typename VisitorType, typename InputType, size_t index = 0>
+InputType opportunisticVisitAndTransform(VisitorType&& visitor, InputType&& x) {
+  if constexpr(index >= std::variant_size_v<InputType>) {
+    return std::forward<InputType>(x);
+  } else if constexpr(std::is_invocable<VisitorType,
+                                        std::variant_alternative_t<index, InputType>>::value) {
+    if(std::holds_alternative<std::variant_alternative_t<index, InputType>>(x)) {
+      return std::forward<VisitorType>(visitor)(
+          std::get<std::variant_alternative_t<index, InputType>>(std::forward<InputType>(x)));
     }
+    return opportunisticVisitAndTransform<VisitorType, InputType, index + 1>(
+        std::forward<VisitorType>(visitor), std::forward<InputType>(x));
+
+  } else {
+    return opportunisticVisitAndTransform<VisitorType, InputType, index + 1>(
+        std::forward<VisitorType>(visitor), std::forward<InputType>(x));
   }
-  return std::forward<InputType>(x);
 };
+} // namespace
 
 } // namespace boss::utilities
