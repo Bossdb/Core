@@ -131,7 +131,7 @@ public:
                 expectedHead};
       }
     }
-    return *this;
+    return std::move(*this);
   }
 
   Transformer operator<(char const* expectedHead) && {
