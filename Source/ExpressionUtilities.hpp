@@ -87,8 +87,8 @@ public:
                      typename ExpressionSystem::ComplexExpression>
   operator()(Ts&&... args) const {
     auto spans = std::array{
-        std::move(args)...}; // unfortunately, vectors cannot be initialized with move-only types
-                             // which is why we need to put spans into an array first
+        std::forward<Ts>(args)...}; // unfortunately, vectors cannot be initialized with move-only
+                                    // types which is why we need to put spans into an array first
     return {s, {}, {}, {std::move_iterator(begin(spans)), std::move_iterator(end(spans))}};
   }
 
@@ -103,5 +103,50 @@ using ExpressionBuilder = ExtensibleExpressionBuilder<>;
 static ExpressionBuilder operator""_(const char* name, size_t /*unused*/) {
   return ExpressionBuilder(name);
 };
+
+namespace experimental {
+namespace {
+class Transformer {
+  /**
+   * if c is a ComplexExpression, it still needs transforming
+   */
+  std::variant<ComplexExpression, Expression> c;
+  char const* expectedHead;
+
+public:
+  Transformer(ComplexExpression&& c, char const* expectedHead)
+      : c(std::move(c)), expectedHead(expectedHead) {}
+  Transformer(Expression&& c, char const* expectedHead)
+      : c(std::move(c)), expectedHead(expectedHead) {}
+  Transformer(std::variant<ComplexExpression, Expression>&& c, char const* expectedHead)
+      : c(std::move(c)), expectedHead(expectedHead) {}
+
+  template <typename Visitor> Transformer operator>=(Visitor&& visitor) && {
+    if(std::holds_alternative<ComplexExpression>(c)) {
+      if(std::get<ComplexExpression>(c).getHead().getName() == expectedHead) {
+        auto [head, statics, dynamics, spans] =
+            std::move(std::get<ComplexExpression>(c)).decompose();
+        return {(Expression)std::forward<Visitor>(visitor)(std::move(statics), std::move(dynamics),
+                                                           std::move(spans)),
+                expectedHead};
+      }
+    }
+    return *this;
+  }
+
+  Transformer operator<(char const* expectedHead) && {
+    return Transformer(std::move(c), expectedHead);
+  }
+  /*implicit*/ operator Expression() { // NOLINT(hicpp-explicit-conversions)
+    return std::visit([](auto&& x) -> Expression { return std::move(x); }, std::move(c));
+  }
+};
+
+Transformer operator<(ComplexExpression&& e, char const* expectedHead) {
+  return Transformer(std::move(e), expectedHead);
+}
+} // namespace
+
+} // namespace experimental
 
 } // namespace boss::utilities
