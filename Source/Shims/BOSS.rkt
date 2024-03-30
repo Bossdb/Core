@@ -77,8 +77,7 @@
     [_ 'unknown]
     )
   )
-
-(define bossTypeID (_enum '(bool long double string symbol complexExpression))
+(define bossTypeID (_enum '(bool int8 int32 long float double string symbol complexExpression))
   )
 
 (define getTypeID (get-ffi-obj "getBOSSExpressionTypeID" libBoss (_fun _pointer -> bossTypeID)))
