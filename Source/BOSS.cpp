@@ -20,7 +20,11 @@ using std::get; // NOLINT(misc-unused-using-decls)
                 // I (Holger) suspect this is a compiler-bug
 
 extern "C" {
-
+/**
+ * (destructively) evaluate the expression. The function takes ownership of the expression and is
+ * free to break to the object. Any pointers and references to the expression must be considered
+ * invalid after calling BOSSEvaluate.
+ */
 BOSSExpression* BOSSEvaluate(BOSSExpression* arg) {
   try {
     static boss::engines::BootstrapEngine engine;

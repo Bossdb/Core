@@ -40,12 +40,14 @@
 (define newComplexExpression
   (get-ffi-obj "newComplexBOSSExpression" libBoss
                (_fun _Symbol _size _pointer -> _pointer)))
-(define freeExpression
-  (get-ffi-obj "freeBOSSExpression" libBoss
-               (_fun _pointer -> _void)))
+(define (freeExpression x)
+  (when (eq? 'owned (cpointer-tag x))
+    ((get-ffi-obj "freeBOSSExpression" libBoss
+                  (_fun _pointer -> _void)) x)))
 (define/contract (gcExpression x)
   (cpointer? . --> . cpointer?)
   (begin
+    (set-cpointer-tag! x 'owned)
 
     (register-finalizer x freeExpression)
     x))
@@ -123,7 +125,11 @@
     )
   )
 
-(define _Expression (make-ctype _pointer convert-to-boss-expression
+(define _Expression (make-ctype _pointer (lambda (racketExpression) (let ( [bossExpression (convert-to-boss-expression racketExpression)])
+                                                                      (set-cpointer-tag! bossExpression 'unowned)
+
+
+                                                                      bossExpression))
                                 (lambda (x) (convert-from-boss-expression (gcExpression x)) )
                                 ))
 
