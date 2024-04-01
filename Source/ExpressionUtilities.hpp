@@ -1,16 +1,10 @@
 #pragma once
 #include "Expression.hpp"
+#include "Algorithm.hpp"
 #include "Utilities.hpp"
 #include <array>
-#include <cstdint>
-#include <map>
-#include <memory>
-#include <ostream>
-#include <sstream>
 #include <tuple>
 #include <type_traits>
-#include <typeindex>
-#include <typeinfo>
 #include <utility>
 
 namespace boss::utilities {
@@ -107,44 +101,91 @@ static ExpressionBuilder operator""_(const char* name, size_t /*unused*/) {
 namespace experimental {
 namespace {
 class Transformer {
+
+  Expression c;
+  char const* expectedHead = nullptr;
   /**
-   * if c is a ComplexExpression, it still needs transforming
+   * by default, transformers are active (i.e., transform if a match is found). However, a
+   * transformer deactivates all downstream operators when it matches
    */
-  std::variant<ComplexExpression, Expression> c;
-  char const* expectedHead;
+  bool isActive = true;
+  /**
+   * if a transformer is deactivated but the target of a pattern that has been matched, it is still
+   * evaluated. The canonical example is a pattern that leads to recursion and some evaluation
+   */
+  bool isInLineWithMatched = false;
 
 public:
-  Transformer(ComplexExpression&& c, char const* expectedHead)
-      : c(std::move(c)), expectedHead(expectedHead) {}
-  Transformer(Expression&& c, char const* expectedHead)
-      : c(std::move(c)), expectedHead(expectedHead) {}
-  Transformer(std::variant<ComplexExpression, Expression>&& c, char const* expectedHead)
-      : c(std::move(c)), expectedHead(expectedHead) {}
+  Transformer(ComplexExpression&& c, char const* expectedHead, bool isActive = true,
+              bool isInLineWithMatched = false)
+      : c(std::move(c)), expectedHead(expectedHead), isActive(isActive),
+        isInLineWithMatched(isInLineWithMatched) {}
+  Transformer(Expression&& c, char const* expectedHead, bool isActive = true,
+              bool isInLineWithMatched = false)
+      : c(std::move(c)), expectedHead(expectedHead), isActive(isActive),
+        isInLineWithMatched(isInLineWithMatched) {}
+
+  template <typename Visitor, typename... StaticArgumentTypes>
+  auto process(expressions::ComplexExpressionWithStaticArguments<StaticArgumentTypes...>&& c,
+               Visitor visitor) {
+    auto [head, statics, dynamics, spans] = std::move(c).decompose();
+    if constexpr(std::is_invocable<Visitor, decltype(head), decltype(statics), decltype(dynamics),
+                                   decltype(spans)>::value) {
+      return (Expression)std::forward<Visitor>(visitor)(std::move(head), std::move(statics),
+                                                        std::move(dynamics), std::move(spans));
+    } else {
+      return (Expression)std::forward<Visitor>(visitor)(std::move(statics), std::move(dynamics),
+                                                        std::move(spans));
+    }
+  }
 
   template <typename Visitor> Transformer operator>=(Visitor&& visitor) && {
-    if(std::holds_alternative<ComplexExpression>(c)) {
-      if(std::get<ComplexExpression>(c).getHead().getName() == expectedHead) {
-        auto [head, statics, dynamics, spans] =
-            std::move(std::get<ComplexExpression>(c)).decompose();
-        return {(Expression)std::forward<Visitor>(visitor)(std::move(statics), std::move(dynamics),
-                                                           std::move(spans)),
-                expectedHead};
-      }
+    return std::move(*this) > std::forward<Visitor>(visitor);
+  }
+
+  template <typename Visitor> Transformer operator>(Visitor&& visitor) && {
+    if(isInLineWithMatched ||
+       isActive && std::holds_alternative<ComplexExpression>(c) &&
+           std::get<ComplexExpression>(c).getHead().getName() == expectedHead) {
+      return {process(std::move(std::get<ComplexExpression>(c)), std::forward<Visitor>(visitor)),
+              expectedHead, false, true};
     }
     return std::move(*this);
   }
 
   Transformer operator<(char const* expectedHead) && {
-    return Transformer(std::move(c), expectedHead);
+    return Transformer(std::move(c), expectedHead, isActive, false);
   }
   /*implicit*/ operator Expression() { // NOLINT(hicpp-explicit-conversions)
-    return std::visit([](auto&& x) -> Expression { return std::move(x); }, std::move(c));
+    return std::visit([](auto&& x) -> Expression { return std::forward<decltype(x)>(x); },
+                      std::move(c));
   }
 };
 
 Transformer operator<(ComplexExpression&& e, char const* expectedHead) {
   return Transformer(std::move(e), expectedHead);
 }
+
+Transformer operator<(Expression&& e, char const* expectedHead) {
+  return Transformer(std::move(e), expectedHead);
+}
+
+template <typename EvaluateFunctionType> struct Recurse {
+  EvaluateFunctionType& evaluate;
+  explicit Recurse(EvaluateFunctionType& evaluate) : evaluate(evaluate) {}
+
+  template <typename StaticAgumentTuple, typename DynamicArgumentContainer,
+            typename SpanArgumentContainer>
+  Expression operator()(Symbol&& head, StaticAgumentTuple&& statics,
+                        DynamicArgumentContainer&& dynamics, SpanArgumentContainer&& spans) {
+    boss::algorithm::visitTransform(dynamics,
+                   [this](auto&& arg) { return evaluate(std::forward<decltype(arg)>(arg)); });
+    return ComplexExpression(std::move(head), std::forward<StaticAgumentTuple>(statics),
+                             std::forward<DynamicArgumentContainer>(dynamics),
+                             std::forward<SpanArgumentContainer>(spans));
+  }
+};
+
 } // namespace
 
 } // namespace experimental

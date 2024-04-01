@@ -2,6 +2,7 @@
 
 #include "Expression.hpp"
 #include <algorithm>
+#include <iterator>
 
 namespace boss::algorithm {
 template <typename Container, typename Visitor> void visitEach(Container c, Visitor v) {
@@ -36,7 +37,7 @@ auto visitTransformAccumulate(Container c, TransformVisitor t, Init i, Accumulat
 template <typename Container, typename TransformVisitor>
 auto visitTransform(Container& c, TransformVisitor t) {
   using std::transform;
-  return transform(c.begin(), c.end(), c.begin(), [&t](auto&& item) {
+  return transform(std::move_iterator(c.begin()), std::move_iterator(c.end()), c.begin(), [&t](auto&& item) {
     return visit([&t](auto&& item) { return t(::std::forward<decltype(item)>(item)); },
                  ::std::forward<decltype(item)>(item));
   });
