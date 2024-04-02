@@ -1,6 +1,6 @@
 #pragma once
-#include "Expression.hpp"
 #include "Algorithm.hpp"
+#include "Expression.hpp"
 #include "Utilities.hpp"
 #include <array>
 #include <tuple>
@@ -116,6 +116,8 @@ class Transformer {
   bool isInLineWithMatched = false;
 
 public:
+  static constexpr char const* const AnyHead = "FBP[vNqRLj4n11i?p@-4i:!!H_cTcW;";
+
   Transformer(ComplexExpression&& c, char const* expectedHead, bool isActive = true,
               bool isInLineWithMatched = false)
       : c(std::move(c)), expectedHead(expectedHead), isActive(isActive),
@@ -146,7 +148,8 @@ public:
   template <typename Visitor> Transformer operator>(Visitor&& visitor) && {
     if(isInLineWithMatched ||
        isActive && std::holds_alternative<ComplexExpression>(c) &&
-           std::get<ComplexExpression>(c).getHead().getName() == expectedHead) {
+           (std::get<ComplexExpression>(c).getHead().getName() == expectedHead ||
+            expectedHead == AnyHead)) {
       return {process(std::move(std::get<ComplexExpression>(c)), std::forward<Visitor>(visitor)),
               expectedHead, false, true};
     }
@@ -178,8 +181,8 @@ template <typename EvaluateFunctionType> struct Recurse {
             typename SpanArgumentContainer>
   Expression operator()(Symbol&& head, StaticAgumentTuple&& statics,
                         DynamicArgumentContainer&& dynamics, SpanArgumentContainer&& spans) {
-    boss::algorithm::visitTransform(dynamics,
-                   [this](auto&& arg) { return evaluate(std::forward<decltype(arg)>(arg)); });
+    boss::algorithm::visitTransform(
+        dynamics, [this](auto&& arg) { return evaluate(std::forward<decltype(arg)>(arg)); });
     return ComplexExpression(std::move(head), std::forward<StaticAgumentTuple>(statics),
                              std::forward<DynamicArgumentContainer>(dynamics),
                              std::forward<SpanArgumentContainer>(spans));
