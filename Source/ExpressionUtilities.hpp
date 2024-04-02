@@ -55,6 +55,13 @@ public:
     (argList.push_back(convertConstCharToStringAndOnToExpression(
          ::std::forward<decltype(args)>(args))), // NOLINT(hicpp-no-array-decay)
      ...);
+    return (*this)(::std::move(argList));
+  }
+
+  /**
+   * build expression from dynamic arguments (or no arguments)
+   */
+  typename ExpressionSystem::ComplexExpression operator()(typename ExpressionSystem::ExpressionArguments&& argList /*a*/) const {
     return {s, {}, ::std::move(argList)};
   }
 
